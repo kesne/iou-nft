@@ -17,6 +17,18 @@ abstract contract TokenURIGenerator {
         returns (string memory);
 }
 
+abstract contract ReverseRegistry {
+    function node(address addr) public virtual view returns (bytes32);
+}
+
+abstract contract ENS {
+    function resolver(bytes32 node) public virtual view returns (ReverseResolver);
+}
+
+abstract contract ReverseResolver {
+    mapping (bytes32 => string) public name;
+}
+
 contract IOweYou is ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
 
@@ -96,10 +108,13 @@ contract IOweYou is ERC721Enumerable, Ownable {
         // When both parties consider the IOU to be completed, we burn it:
         if (iou.receiverCompleted && iou.creatorCompleted) {
             _burn(tokenId);
+<<<<<<< HEAD
             _removeTokenFromCreatorEnumeration(iou.creator, tokenId);
             // TODO: Move this to the remove function:
             createdBalances[iou.creator]--;
             emit IOUCompleted(tokenId);
+=======
+>>>>>>> a74d794 (Start working on IOU)
             delete ious[tokenId];
             return true;
         }

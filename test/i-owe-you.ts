@@ -10,7 +10,7 @@ describe("IOweYou", () => {
   before(async () => {
     const IOweYou = await ethers.getContractFactory("IOweYou");
     iOweYou = (await IOweYou.deploy()) as IOweYou;
-    iOweYou.deployed();
+    await iOweYou.deployed();
   });
 
   afterEach(async () => {

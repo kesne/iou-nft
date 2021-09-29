@@ -22,6 +22,14 @@ export default {
       optimizer: {
         enabled: true,
         runs: 200,
+      }
+    }
+  },
+  networks: {
+    hardhat: {
+      forking: {
+        url: "https://eth-ropsten.alchemyapi.io/v2/JhrxXjl7NsztHXJ-yiBAQz4CDQ7Ncq-a",
+        blockNumber: 11133070
       },
     },
   },
