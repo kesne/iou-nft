@@ -108,14 +108,11 @@ contract IOweYou is ERC721Enumerable, Ownable {
         // When both parties consider the IOU to be completed, we burn it:
         if (iou.receiverCompleted && iou.creatorCompleted) {
             _burn(tokenId);
-<<<<<<< HEAD
             _removeTokenFromCreatorEnumeration(iou.creator, tokenId);
             // TODO: Move this to the remove function:
             createdBalances[iou.creator]--;
-            emit IOUCompleted(tokenId);
-=======
->>>>>>> a74d794 (Start working on IOU)
             delete ious[tokenId];
+            emit IOUCompleted(tokenId);
             return true;
         }
 
