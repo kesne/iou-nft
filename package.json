@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "hardhat test"
   },
   "keywords": [],
   "author": "vapejuicejordan.eth",
@@ -19,6 +19,7 @@
     "ethers": "^5.4.7",
     "expect": "^27.2.4",
     "hardhat": "^2.6.4",
+    "hardhat-gas-reporter": "^1.0.4",
     "ts-node": "^10.2.1",
     "typescript": "^4.4.3"
   }
