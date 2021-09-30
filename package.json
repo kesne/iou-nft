@@ -10,8 +10,6 @@
   "author": "vapejuicejordan.eth",
   "license": "MIT",
   "devDependencies": {
-    "@ensdomains/buffer": "^0.0.13",
-    "@ensdomains/ens-contracts": "^0.0.7",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.3.2",
