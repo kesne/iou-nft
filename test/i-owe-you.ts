@@ -1,15 +1,45 @@
 import expect from "expect";
 import { ethers } from "hardhat";
-import { Contract } from "ethers";
+import { IOweYou } from "../typechain";
 
 const PROMISE = "I promise to do something.";
+const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 describe("IOweYou", () => {
-  let iOweYou: Contract;
+  let iOweYou: IOweYou;
   before(async () => {
     const IOweYou = await ethers.getContractFactory("IOweYou");
-    iOweYou = await IOweYou.deploy("test://");
+    iOweYou = (await IOweYou.deploy()) as IOweYou;
     iOweYou.deployed();
+  });
+
+  afterEach(async () => {
+    // Re-set the state of token URI:
+    await iOweYou.setTokenURIAddress(NULL_ADDRESS);
+  });
+
+  it.only("works", async () => {
+    const [owner] = await ethers.getSigners();
+    console.log(
+      await iOweYou.addrToString("0x72CB0Ce0e6716667ea7209C9aD2111690a22F633")
+    );
+  });
+
+  it("allows for dynamically updating the tokenURI generation", async () => {
+    const [, , , , , creator, user] = await ethers.getSigners();
+    const createTx = await iOweYou
+      .connect(creator)
+      .create(user.address, PROMISE);
+    await createTx.wait();
+
+    const TestTokenURI = await ethers.getContractFactory("TestTokenURI");
+    const testTokenURI = await TestTokenURI.deploy();
+    await testTokenURI.deployed();
+    await iOweYou.setTokenURIAddress(testTokenURI.address);
+    const tokenId = await iOweYou.tokenOfOwnerByIndex(user.address, 0);
+    expect(await iOweYou.tokenURI(tokenId)).toEqual(
+      `Static Token URI For: ${tokenId}`
+    );
   });
 
   it("should not allow acccessing tokenURI for tokens not yet minted", async () => {
@@ -125,7 +155,7 @@ describe("IOweYou", () => {
     const tokenIds: number[] = [];
     for (
       let i = 0;
-      i < (await iOweYou.createdBalanceOf(creator.address));
+      i < (await iOweYou.createdBalanceOf(creator.address)).toNumber();
       i += 1
     ) {
       tokenIds.push(
@@ -143,8 +173,8 @@ describe("IOweYou", () => {
       // to avoid extra bookkeeping, and just expect one of them to resolve:
       await Promise.any([
         iOweYou.connect(receiver1).complete(tokenId),
-        iOweYou.connect(receiver2).complete(tokenId)
-      ])
+        iOweYou.connect(receiver2).complete(tokenId),
+      ]);
 
       // We expect one less token now:
       expectedTokenCount -= 1;
