@@ -2,11 +2,20 @@
 
 pragma solidity ^0.8.0;
 
+// import "hardhat/console.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "base64-sol/base64.sol";
 
-// import "hardhat/console.sol";
+abstract contract TokenURIGenerator {
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        virtual
+        returns (string memory);
+}
 
 contract IOweYou is ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
@@ -20,7 +29,13 @@ contract IOweYou is ERC721Enumerable, Ownable {
         bool receiverCompleted;
     }
 
-    event IOUCreated(address indexed created, address indexed receiver, string owed, uint256 tokenId);
+    event IOUCreated(
+        address indexed created,
+        address indexed receiver,
+        string owed,
+        uint256 tokenId
+    );
+
     event IOUCompleted(uint256 tokenId);
 
     mapping(uint256 => IOU) public ious;
@@ -82,6 +97,7 @@ contract IOweYou is ERC721Enumerable, Ownable {
         if (iou.receiverCompleted && iou.creatorCompleted) {
             _burn(tokenId);
             _removeTokenFromCreatorEnumeration(iou.creator, tokenId);
+            // TODO: Move this to the remove function:
             createdBalances[iou.creator]--;
             emit IOUCompleted(tokenId);
             delete ious[tokenId];
@@ -158,18 +174,181 @@ contract IOweYou is ERC721Enumerable, Ownable {
         delete createdTokens[from][lastTokenIndex];
     }
 
-    /** URI HANDLING **/
-    string private customBaseURI;
+    /**
+     * This allows for upgrading the `tokenURI` function in the future.
+     */
+    address public customTokenURIAddress;
 
-    function setBaseURI(string memory baseURI) external onlyOwner {
-        customBaseURI = baseURI;
+    function setTokenURIAddress(address tokenURIAddress) external onlyOwner {
+        customTokenURIAddress = tokenURIAddress;
     }
 
-    function _baseURI() internal view virtual override returns (string memory) {
-        return customBaseURI;
+    function addressToByteString(address addr)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes memory data = abi.encodePacked(addr);
+        bytes memory alphabet = "0123456789abcdef";
+
+        bytes memory str = new bytes(2 + data.length * 2);
+        str[0] = "0";
+        str[1] = "x";
+        for (uint256 i = 0; i < data.length; i++) {
+            str[2 + i * 2] = alphabet[uint256(uint8(data[i] >> 4))];
+            str[3 + i * 2] = alphabet[uint256(uint8(data[i] & 0x0f))];
+        }
+        return str;
     }
 
-    constructor(string memory baseURI) ERC721("IOweYou", "IOU") Ownable() {
-        customBaseURI = baseURI;
+    function addrToString(address addr) public pure returns (string memory) {
+        // 0x0000...0000
+        string memory newString = new string(13);
+        bytes memory byteString = bytes(newString);
+        bytes memory addrBytes = addressToByteString(addr);
+
+        byteString[0] = addrBytes[0];
+        byteString[1] = addrBytes[1];
+        byteString[2] = addrBytes[2];
+        byteString[3] = addrBytes[3];
+        byteString[4] = addrBytes[4];
+        byteString[5] = addrBytes[5];
+        byteString[6] = ".";
+        byteString[7] = ".";
+        byteString[8] = ".";
+        byteString[9] = addrBytes[addrBytes.length - 4];
+        byteString[10] = addrBytes[addrBytes.length - 3];
+        byteString[11] = addrBytes[addrBytes.length - 2];
+        byteString[12] = addrBytes[addrBytes.length - 1];
+
+        return string(newString);
     }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override
+        returns (string memory)
+    {
+        require(_exists(tokenId), "No token");
+
+        // If we've set a custom token URI, use that instead of the built-in contract renderer:
+        if (customTokenURIAddress != address(0)) {
+            return TokenURIGenerator(customTokenURIAddress).tokenURI(tokenId);
+        }
+        // string[17] memory parts;
+        // parts[
+        //     0
+        // ] = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-weight: bold; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="50%" y="90" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[1] = "foo";
+
+        // parts[
+        //     2
+        // ] = '</text><text x="50%" y="120" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[3] = "foo";
+
+        // parts[
+        //     4
+        // ] = '</text><text x="50%" y="150" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[5] = "foo";
+
+        // parts[
+        //     6
+        // ] = '</text><text x="50%" y="180" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[7] = "foo";
+
+        // parts[
+        //     8
+        // ] = '</text><text x="50%" y="210" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[9] = "foo";
+
+        // parts[
+        //     10
+        // ] = '</text><text x="50%" y="240" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[11] = "foo";
+
+        // parts[
+        //     14
+        // ] = '</text><text x="50%" y="270" dominant-baseline="middle" text-anchor="middle" class="base">';
+
+        // parts[15] = "foo";
+
+        // parts[16] = "</text></svg>";
+
+        // string memory output = string(
+        //     abi.encodePacked(
+        //         parts[0],
+        //         parts[1],
+        //         parts[2],
+        //         parts[3],
+        //         parts[4],
+        //         parts[5],
+        //         parts[6],
+        //         parts[7],
+        //         parts[8]
+        //     )
+        // );
+        // output = string(
+        //     abi.encodePacked(
+        //         output,
+        //         parts[9],
+        //         parts[10],
+        //         parts[11],
+        //         parts[12],
+        //         parts[13],
+        //         parts[14],
+        //         parts[15],
+        //         parts[16]
+        //     )
+        // );
+
+        string memory output = "start";
+
+        string memory json = Base64.encode(
+            bytes(
+                string(
+                    abi.encodePacked(
+                        '{"name": "TechStack #',
+                        Strings.toString(tokenId),
+                        '", "description": "Your very own unique TechStack which represents you.", "image": "data:image/svg+xml;base64,',
+                        Base64.encode(bytes(output)),
+                        '"}'
+                    )
+                )
+            )
+        );
+
+        output = string(
+            abi.encodePacked("data:application/json;base64,", json)
+        );
+
+        return output;
+    }
+
+    // function tokenURI(uint256 tokenId)
+    //     public
+    //     view
+    //     override
+    //     returns (string memory)
+    // {
+    //     require(_exists(tokenId), "No token");
+
+    //     return
+    //         Encoder.encodeMetadataJSON(
+    //             Encoder.createMetadataJSON(
+    //                 name(),
+    //                 "A description",
+    //                 "metadata",
+    //                 tokenId
+    //             )
+    //         );
+    // }
+
+    constructor() ERC721("IOweYou", "IOU") Ownable() {}
 }

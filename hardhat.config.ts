@@ -1,3 +1,4 @@
+import '@typechain/hardhat'
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-gas-reporter";
 import { task, HardhatUserConfig } from "hardhat/config";
@@ -11,6 +12,10 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 });
 
 export default {
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 60,
+  },
   solidity: {
     version: "0.8.9",
     settings: {
