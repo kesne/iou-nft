@@ -5,11 +5,16 @@ import { IOweYou } from "../typechain";
 const PROMISE = "I promise to do something.";
 const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+// This is the following contract's address on Ropsten:
+// https://github.com/ensdomains/reverse-records
+const REVERSE_NAMES_CONTRACT_ROPSTEN =
+  "0x72c33B247e62d0f1927E8d325d0358b8f9971C68";
+
 describe("IOweYou", () => {
   let iOweYou: IOweYou;
   before(async () => {
     const IOweYou = await ethers.getContractFactory("IOweYou");
-    iOweYou = (await IOweYou.deploy()) as IOweYou;
+    iOweYou = (await IOweYou.deploy(REVERSE_NAMES_CONTRACT_ROPSTEN)) as IOweYou;
     await iOweYou.deployed();
   });
 
