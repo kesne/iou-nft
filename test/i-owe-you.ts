@@ -2,6 +2,8 @@ import expect from "expect";
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
 
+const PROMISE = "I promise to do something.";
+
 describe("IOweYou", () => {
   let iOweYou: Contract;
   before(async () => {
@@ -21,10 +23,7 @@ describe("IOweYou", () => {
     await expect(async () => {
       const [owner] = await ethers.getSigners();
 
-      const createTx = await iOweYou.create(
-        owner.address,
-        "I promise to do something."
-      );
+      const createTx = await iOweYou.create(owner.address, PROMISE);
 
       await createTx.wait();
     }).rejects.toMatchObject({
@@ -32,15 +31,10 @@ describe("IOweYou", () => {
     });
   });
 
-  it("should allow for creating an IOU", async () => {
+  it("should support the basic IOU flow", async () => {
     const [creator, receiver, uninvolved] = await ethers.getSigners();
 
-    const promise = "I promise to do something.";
-
-    const iou = await iOweYou.create(
-      receiver.address,
-      "I promise to do something."
-    );
+    const iou = await iOweYou.create(receiver.address, PROMISE);
     await iou.wait();
 
     const creatorBalance = await iOweYou.balanceOf(creator.address);
@@ -58,10 +52,8 @@ describe("IOweYou", () => {
 
     // Expect the IOU to be the correct shape:
     let iouState = await iOweYou.getIOU(tokenId);
-    expect(iouState.owed).toBe(promise);
-    expect(iouState.owed).toBe(promise);
+    expect(iouState.owed).toBe(PROMISE);
     expect(iouState.creator).toBe(creator.address);
-    expect(iouState.receiver).toBe(receiver.address);
     expect(iouState.creatorCompleted).toBe(false);
     expect(iouState.receiverCompleted).toBe(false);
 
@@ -94,5 +86,69 @@ describe("IOweYou", () => {
 
     // Should be burned:
     expect((await iOweYou.balanceOf(receiver.address)).toNumber()).toBe(0);
+  });
+
+  it("should be creator enumerable", async () => {
+    const [creator, receiver1, receiver2] = await ethers.getSigners();
+
+    async function checkBalance(signer: { address: string }, count: number) {
+      return expect(
+        (await iOweYou.createdBalanceOf(signer.address)).toNumber()
+      ).toBe(count);
+    }
+
+    // Everyone should start with no tokens created:
+    await checkBalance(creator, 0);
+    await checkBalance(receiver1, 0);
+    await checkBalance(receiver2, 0);
+
+    // We'll create multiple tokens, to different receivers:
+    const tokensToCreate = [
+      receiver1,
+      receiver1,
+      receiver1,
+      receiver2,
+      receiver2,
+    ];
+
+    await Promise.all(
+      tokensToCreate.map(async () => {
+        await (await iOweYou.create(receiver1.address, PROMISE)).wait();
+      })
+    );
+
+    await checkBalance(creator, tokensToCreate.length);
+    await checkBalance(receiver1, 0);
+    await checkBalance(receiver2, 0);
+
+    // Get the tokens IDs:
+    const tokenIds: number[] = [];
+    for (
+      let i = 0;
+      i < (await iOweYou.createdBalanceOf(creator.address));
+      i += 1
+    ) {
+      tokenIds.push(
+        (await iOweYou.tokenOfCreatorByIndex(creator.address, i)).toNumber()
+      );
+    }
+
+    expect(tokenIds).toHaveLength(tokensToCreate.length);
+
+    // Progressively burn the tokens:
+    let expectedTokenCount = tokensToCreate.length;
+    for (const tokenId of tokenIds) {
+      await iOweYou.connect(creator).complete(tokenId);
+      // Also mark it as complete for the other users. We blindly do this for both receivers
+      // to avoid extra bookkeeping, and just expect one of them to resolve:
+      await Promise.any([
+        iOweYou.connect(receiver1).complete(tokenId),
+        iOweYou.connect(receiver2).complete(tokenId)
+      ])
+
+      // We expect one less token now:
+      expectedTokenCount -= 1;
+      await checkBalance(creator, expectedTokenCount);
+    }
   });
 });
