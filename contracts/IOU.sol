@@ -17,6 +17,14 @@ abstract contract TokenURIGenerator {
         returns (string memory);
 }
 
+abstract contract ReverseRecords {
+    function getNames(address[] calldata addresses)
+        external
+        view
+        virtual
+        returns (string[] memory r);
+}
+
 contract IOweYou is ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
 
@@ -99,8 +107,8 @@ contract IOweYou is ERC721Enumerable, Ownable {
             _removeTokenFromCreatorEnumeration(iou.creator, tokenId);
             // TODO: Move this to the remove function:
             createdBalances[iou.creator]--;
-            emit IOUCompleted(tokenId);
             delete ious[tokenId];
+            emit IOUCompleted(tokenId);
             return true;
         }
 
@@ -172,6 +180,22 @@ contract IOweYou is ERC721Enumerable, Ownable {
         // This also deletes the contents at the last position of the array
         delete createdTokensIndex[tokenId];
         delete createdTokens[from][lastTokenIndex];
+    }
+
+    /**
+     * This allows for resolving an address to an ens name.
+     */
+    address private reverseRecordsAddress;
+
+    function setReverseRecordsAddress(address addr) external onlyOwner {
+        reverseRecordsAddress = addr;
+    }
+
+    function getENSName(address addr) public view returns (string memory) {
+        address[] memory addrs = new address[](1);
+        addrs[0] = addr;
+        string[] memory names = ReverseRecords(reverseRecordsAddress).getNames(addrs);
+        return names[0];
     }
 
     /**
@@ -350,5 +374,9 @@ contract IOweYou is ERC721Enumerable, Ownable {
     //         );
     // }
 
-    constructor() ERC721("IOweYou", "IOU") Ownable() {}
+    constructor(
+        address initialReverseRecordsAddress
+    ) ERC721("IOweYou", "IOU") Ownable() {
+        reverseRecordsAddress = initialReverseRecordsAddress;
+    }
 }
