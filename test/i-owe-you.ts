@@ -23,13 +23,6 @@ describe("IOweYou", () => {
     await iOweYou.setTokenURIAddress(NULL_ADDRESS);
   });
 
-  it.only("works", async () => {
-    const [owner] = await ethers.getSigners();
-    console.log(
-      await iOweYou.addrToString("0x72CB0Ce0e6716667ea7209C9aD2111690a22F633")
-    );
-  });
-
   it("allows for dynamically updating the tokenURI generation", async () => {
     const [, , , , , creator, user] = await ethers.getSigners();
     const createTx = await iOweYou
@@ -83,7 +76,8 @@ describe("IOweYou", () => {
     const tokenId = await iOweYou.tokenOfOwnerByIndex(receiver.address, 0);
 
     // Expect token URI to exist:
-    expect(await iOweYou.tokenURI(tokenId)).toEqual(`test://${tokenId}`);
+    console.log(await iOweYou.tokenURI(tokenId));
+    expect(await iOweYou.tokenURI(tokenId)).toBeTruthy();
 
     // Expect the IOU to be the correct shape:
     let iouState = await iOweYou.getIOU(tokenId);
@@ -116,7 +110,7 @@ describe("IOweYou", () => {
     await expect(async () => {
       await iOweYou.getIOU(tokenId);
     }).rejects.toMatchObject({
-      message: expect.stringContaining("IOU does not exist."),
+      message: expect.stringContaining("No token"),
     });
 
     // Should be burned:
