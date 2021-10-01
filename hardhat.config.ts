@@ -1,4 +1,5 @@
-import '@typechain/hardhat'
+import "dotenv/config";
+import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-gas-reporter";
@@ -14,7 +15,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 export default {
   gasReporter: {
-    currency: 'USD',
+    currency: "USD",
     gasPrice: 60,
   },
   solidity: {
@@ -23,21 +24,28 @@ export default {
       optimizer: {
         enabled: true,
         runs: 200,
-      }
-    }
-  },
-  networks: {
-    localhost: {
-      url: "http://127.0.0.1:8545"
-    },
-    hardhat: {
-      forking: {
-        url: "https://eth-ropsten.alchemyapi.io/v2/JhrxXjl7NsztHXJ-yiBAQz4CDQ7Ncq-a",
-        blockNumber: 11133070
       },
     },
   },
+  networks: {
+    localhost: {
+      url: "http://127.0.0.1:8545",
+    },
+    hardhat: {
+      forking: {
+        url: `https://eth-ropsten.alchemyapi.io/v2/${process.env.ALCHEMY_ROPSTEN}`,
+        blockNumber: 11133070,
+      },
+    },
+    ropsten: {
+      url: `https://eth-ropsten.alchemyapi.io/v2/${process.env.ALCHEMY_ROPSTEN}`,
+    },
+    rinkeby: {
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_RINKEBY}`,
+      accounts: [process.env.RINKEBY_KEY],
+    },
+  },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
 } as HardhatUserConfig;
