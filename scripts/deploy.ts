@@ -9,7 +9,6 @@ const REVERSE_REGISTRY_ADDRESS = {
 } as Record<string, string>;
 
 async function main() {
-  const [owner] = await ethers.getSigners();
   const IOweYou = await ethers.getContractFactory("IOweYou");
   const iOweYou = await IOweYou.deploy(
     REVERSE_REGISTRY_ADDRESS[process.env.HARDHAT_NETWORK || 'default']
