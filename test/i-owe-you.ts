@@ -76,8 +76,28 @@ describe("IOweYou", () => {
     const tokenId = await iOweYou.tokenOfOwnerByIndex(receiver.address, 0);
 
     // Expect token URI to exist:
-    console.log(await iOweYou.tokenURI(tokenId));
-    expect(await iOweYou.tokenURI(tokenId)).toBeTruthy();
+    const tokenURI = await iOweYou.tokenURI(tokenId);
+    expect(tokenURI.startsWith("data:application/json;base64,")).toBeTruthy();
+
+    const tokenMetadata = JSON.parse(
+      Buffer.from(tokenURI.split(",")[1], "base64").toString("utf8")
+    );
+
+    expect(tokenMetadata).toMatchObject({
+      name: expect.anything(),
+      description: expect.anything(),
+      image: expect.anything(),
+    });
+
+    expect(
+      tokenMetadata.image.startsWith("data:image/svg+xml;base64,")
+    ).toBeTruthy();
+    expect(
+      Buffer.from(tokenMetadata.image.split(",")[1], "base64")
+        .toString("utf8")
+        .trim()
+        .startsWith("<svg")
+    ).toBeTruthy();
 
     // Expect the IOU to be the correct shape:
     let iouState = await iOweYou.getIOU(tokenId);

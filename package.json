@@ -25,9 +25,7 @@
     "hardhat-gas-reporter": "^1.0.4",
     "ts-node": "^10.2.1",
     "typechain": "^5.1.2",
-    "typescript": "^4.4.3"
-  },
-  "dependencies": {
+    "typescript": "^4.4.3",
     "base64-sol": "^1.0.1"
   }
 }
